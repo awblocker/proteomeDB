@@ -18,21 +18,21 @@ CREATE TABLE TEMPLATE.peptides (
 -- Table for protein to peptide mapping
 -- Enforcing non-unique foreign key relationship
 CREATE TABLE TEMPLATE.peptide_to_protein (
-    protein_id      bigint references proteins,
-    peptide_id      bigint references peptides
+    protein_id      bigint references TEMPLATE.proteins,
+    peptide_id      bigint references TEMPLATE.peptides
 );
 
 -- Table for experiment data
-CREATE TABLE TEMPLATE.experiment (
+CREATE TABLE TEMPLATE.experiments (
     experiment_id   bigserial primary key,
     experiment_name varchar(100)
 );
 
 -- Table for observed intensities and MSMS counts
 CREATE TABLE TEMPLATE.observations (
-    obs_id          bigserial primarykey,
-    experiment_id   bigint references experiments,
-    peptide_id      bigint references peptides,
+    obs_id          bigserial primary key,
+    experiment_id   bigint references TEMPLATE.experiments,
+    peptide_id      bigint references TEMPLATE.peptides,
     intensity       double precision,
     msms_count      int
 );

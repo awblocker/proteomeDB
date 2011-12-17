@@ -4,17 +4,76 @@
 import numpy as np
 import psycopg2
 import sys, os
-import tempfile
-import StringIO
-import csv
+import string
 from optparse import OptionParser
 
-def setupDatabase(schemaName, schemaFile, opts):
+def buildDsn(dbname, **kwargs):
+    # Function to build dsn string for psycopg2 connections
+    dsn = 'dbname=%s' % dbname
+
+    for key in kwargs:
+        if kwargs[key] is not None:
+            dsn += " %s=%s" % (key, kwargs[key])
+
+    return dsn
+
+def parseSqlToCmds(sqlTxt):
+    '''
+    Function parse SQL text (as list of lines) into commands.
+
+    Removes comment-only lines and splits based upon semicolons.
+
+    Returns list of command strings.
+    '''
+    # Remove comments
+    sqlTxt = [line.strip() for line in sqlTxt if line[0:2]!='--']
+
+    # Merge into a single string
+    sqlTxt = ''.join(sqlTxt)
+
+    # Split into commands based upon semicolons
+    sqlCmds = sqlTxt.split(';')
+    sqlCmds = [s for s in sqlCmds if len(s) > 0]
+    
+    # Add semicolons back to end of commands
+    sqlCmds = [s + ';' for s in sqlCmds]
+
+    return(sqlCmds)
+
+def setupDatabase(schemaName, schemaFile, opts, verbose=1):
     '''
     Function to coordinate setup of database based on given schema
     '''
     
-    # 
+    # First, load schema into memory
+    schemaTxt = schemaFile.readlines()
+
+    # Parse into commands
+    schemaCmds = parseSqlToCmds(schemaTxt)
+    
+    # Substitute desired schema name for placeholder
+    schemaCmds = [string.replace(s, opts.var, schemaName) for s in schemaCmds]
+
+    # Connect to database
+    dsn = buildDsn(opts.dbname, user=opts.user, host=opts.host)
+    if verbose:
+        print >> sys.stderr, "DSN:\t", dsn
+    conn = psycopg2.connect(dsn)
+
+    # Execute commands
+    cur = conn.cursor()
+
+    for cmd in schemaCmds:
+        if verbose:
+            print >> sys.stderr, cmd
+        cur.execute(cmd)
+
+    # Commit changes
+    conn.commit()
+
+    # Close connection
+    cur.close()
+    conn.close()
 
 
 def main(argv):
@@ -35,6 +94,9 @@ def main(argv):
     parser.add_option('-d', '--dbname', dest='dbname',
                       default='proteome', metavar='DBNAME',
                       help='Name of database to setup schema in')
+    parser.add_option('--var', dest='var',
+                      default='TEMPLATE',
+                      help='Placeholder to replace in schema SQL file')
 
     # Parse arguments
     opts, args = parser.parse_args(argv)
@@ -48,7 +110,7 @@ def main(argv):
         print >> sys.stderr, 'Error -- Need schema name and file'
     
     # Call function to setup database
-    setupDatabase(dataFile, opts)
+    setupDatabase(schemaName, schemaFile, opts)
 
     return 0
 
