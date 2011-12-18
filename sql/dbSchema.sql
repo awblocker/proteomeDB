@@ -37,5 +37,19 @@ CREATE TABLE TEMPLATE.observations (
     msms_count      int
 );
 
+CREATE VIEW TEMPLATE.annotated_peptides AS
+    SELECT a.peptide_id, peptide_seq, a.protein_id, protein_name
+    FROM TEMPLATE.peptide_to_protein AS a LEFT JOIN
+    TEMPLATE.proteins AS b ON a.protein_id = b.protein_id LEFT JOIN
+    TEMPLATE.peptides AS c ON a.peptide_id = c.peptide_id;
+
+CREATE VIEW TEMPLATE.dataset AS
+    SELECT obs_id, experiment_name, peptide_seq, protein_name,
+    intensity, msms_count
+    FROM TEMPLATE.observations AS a LEFT JOIN TEMPLATE.annotated_peptides AS b
+    ON a.peptide_id = b.peptide_id LEFT JOIN
+    TEMPLATE.experiments AS c ON a.experiment_id = c.experiment_id
+    ORDER BY a.experiment_id, protein_id, a.peptide_id;
+
 -- Note: Probably want to remove then reactivate foreign key restrictions
 --       on initial data load
