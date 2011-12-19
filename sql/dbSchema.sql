@@ -18,8 +18,10 @@ CREATE TABLE TEMPLATE.peptides (
 -- Table for protein to peptide mapping
 -- Enforcing non-unique foreign key relationship
 CREATE TABLE TEMPLATE.peptide_to_protein (
+    pair_id         bigserial primary key,
     protein_id      bigint references TEMPLATE.proteins,
-    peptide_id      bigint references TEMPLATE.peptides
+    peptide_id      bigint references TEMPLATE.peptides,
+    CONSTRAINT unique_mapping UNIQUE (protein_id, peptide_id)
 );
 
 -- Table for experiment data
