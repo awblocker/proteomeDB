@@ -58,7 +58,7 @@ CREATE VIEW TEMPLATE.peptides_by_experiment AS
     SELECT DISTINCT prot.experiment_id, prot.protein_id, prot.protein_name,
     pep.peptide_id, pep.peptide_seq
     FROM TEMPLATE.proteins_by_experiment as prot JOIN
-    TEMPLATE.annontated_peptides as pep ON
+    TEMPLATE.annotated_peptides as pep ON
     prot.protein_id = pep.protein_id;
 
 CREATE VIEW TEMPLATE.dataset AS
