@@ -81,6 +81,10 @@ def loadToDatabase(dataFile, opts, verbose=1):
         # Get observation information
         intensity = line['intensity']
         msmsCount = line['msms_count']
+
+        # Skip observation if MSMS count is zero
+        if msmsCount == "0":
+            next
         
         # Get protein/peptide pair as indices
         proteinId = proteinsUniq.index(line['protein']) + 1
