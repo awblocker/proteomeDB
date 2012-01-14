@@ -27,6 +27,7 @@ def parseSqlToCmds(sqlTxt):
     '''
     # Remove comments
     sqlTxt = [line.strip('\n\r') for line in sqlTxt if line[0:2]!='--']
+    sqlTxt = [line.split('--')[0] for line in sqlTxt]
 
     # Merge into a single string
     sqlTxt = ''.join(sqlTxt)
