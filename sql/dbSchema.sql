@@ -36,14 +36,30 @@ CREATE TABLE TEMPLATE.observations (
     experiment_id   bigint references TEMPLATE.experiments,
     peptide_id      bigint references TEMPLATE.peptides,
     intensity       double precision,
-    msms_count      int
+    msms_count      int CHECK (msms_count > 0) --Only contains observed peptides
 );
 
+-- View for peptides with protein annotations
 CREATE VIEW TEMPLATE.annotated_peptides AS
     SELECT a.peptide_id, peptide_seq, a.protein_id, protein_name
     FROM TEMPLATE.peptide_to_protein AS a LEFT JOIN
     TEMPLATE.proteins AS b ON a.protein_id = b.protein_id LEFT JOIN
     TEMPLATE.peptides AS c ON a.peptide_id = c.peptide_id;
+
+-- View for all proteins identified in each experiment
+CREATE VIEW TEMPLATE.proteins_by_experiment AS
+    SELECT DISTINCT obs.experiment_id, pep.protein_id, pep.protein_name
+    FROM TEMPLATE.observations as obs LEFT JOIN
+    TEMPLATE.annotated_peptides as pep ON
+    obs.peptide_id = pep.peptide_id;
+
+-- View for all peptides from proteins identified in each experiment
+CREATE VIEW TEMPLATE.peptides_by_experiment AS
+    SELECT DISTINCT prot.experiment_id, prot.protein_id, prot.protein_name,
+    pep.peptide_id, pep.peptide_seq
+    FROM TEMPLATE.proteins_by_experiment as prot JOIN
+    TEMPLATE.annontated_peptides as pep ON
+    prot.protein_id = pep.protein_id;
 
 CREATE VIEW TEMPLATE.dataset AS
     SELECT obs_id, experiment_name, peptide_seq, protein_name,
