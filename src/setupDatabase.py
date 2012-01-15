@@ -26,7 +26,7 @@ def parseSqlToCmds(sqlTxt):
     Returns list of command strings.
     '''
     # Remove comments
-    sqlTxt = [line.strip('\n\r') for line in sqlTxt if line[0:2]!='--']
+    sqlTxt = [line.strip('\n\r') for line in sqlTxt]
     sqlTxt = [line.split('--')[0] for line in sqlTxt]
 
     # Merge into a single string
