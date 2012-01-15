@@ -42,14 +42,14 @@ CREATE TABLE TEMPLATE.observations (
 -- View for peptides with protein annotations
 CREATE VIEW TEMPLATE.annotated_peptides AS
     SELECT a.peptide_id, peptide_seq, a.protein_id, protein_name
-    FROM TEMPLATE.peptide_to_protein AS a LEFT JOIN
-    TEMPLATE.proteins AS b ON a.protein_id = b.protein_id LEFT JOIN
+    FROM TEMPLATE.peptide_to_protein AS a INNER JOIN
+    TEMPLATE.proteins AS b ON a.protein_id = b.protein_id INNER JOIN
     TEMPLATE.peptides AS c ON a.peptide_id = c.peptide_id;
 
 -- View for all proteins identified in each experiment
 CREATE VIEW TEMPLATE.proteins_by_experiment AS
     SELECT DISTINCT obs.experiment_id, pep.protein_id, pep.protein_name
-    FROM TEMPLATE.observations as obs LEFT JOIN
+    FROM TEMPLATE.observations as obs INNER JOIN
     TEMPLATE.annotated_peptides as pep ON
     obs.peptide_id = pep.peptide_id;
 
@@ -61,13 +61,25 @@ CREATE VIEW TEMPLATE.peptides_by_experiment AS
     TEMPLATE.annotated_peptides as pep ON
     prot.protein_id = pep.protein_id;
 
-CREATE VIEW TEMPLATE.dataset AS
+-- View for dataset of all observed peptides with annotations
+CREATE VIEW TEMPLATE.obs_dataset AS
     SELECT obs_id, experiment_name, peptide_seq, protein_name,
     intensity, msms_count
-    FROM TEMPLATE.observations AS a LEFT JOIN TEMPLATE.annotated_peptides AS b
-    ON a.peptide_id = b.peptide_id LEFT JOIN
+    FROM TEMPLATE.observations AS a JOIN TEMPLATE.annotated_peptides AS b
+    ON a.peptide_id = b.peptide_id JOIN
     TEMPLATE.experiments AS c ON a.experiment_id = c.experiment_id
     ORDER BY a.experiment_id, protein_id, a.peptide_id;
+
+-- View for dataset of all peptides for all experiments; returning NULLs for
+-- those with 0 MSMS counts
+CREATE VIEW TEMPLATE.dataset AS
+    SELECT obs_id, experiment_name, peptide_seq, protein_name,
+    intensity, COALESCE(msms_count, 0) AS msms_count
+    FROM (TEMPLATE.observations AS obs RIGHT OUTER JOIN
+    TEMPLATE.peptides_by_experiment AS pep ON obs.peptide_id = pep.peptide_id
+    AND obs.experiment_id = pep.experiment_id) JOIN
+    TEMPLATE.experiments AS exp ON pep.experiment_id = exp.experiment_id
+    ORDER BY obs.experiment_id, protein_id, obs.peptide_id;
 
 -- Note: Probably want to remove then reactivate foreign key restrictions
 --       on initial data load
